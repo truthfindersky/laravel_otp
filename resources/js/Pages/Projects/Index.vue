@@ -14,14 +14,12 @@ const addProject = () => {
     });
 };
 
-/* const deleteProject = (id) => {
-    if (confirm("Are you sure you want to delete this project?")) {
-        router.delete(route("projects.destroy", id));
-    }
-}; */
+const projectDeleteForm = useForm({});
 
 const deleteProject = (id) => {
-    form.delete(route("project.destroy", id));
+    if (confirm("Are you sure you want to delete this project?")) {
+        projectDeleteForm.delete(route("projects.destroy", id));
+    }
 };
 
 // Form for adding tasks
@@ -32,21 +30,21 @@ const form = useForm({
     project_id: "",
 });
 
-const isModalOpen = ref(false); // State to manage modal visibility
+const isModalOpen = ref(false);
 
 const openModal = () => {
-    isModalOpen.value = true; // Show the modal
+    isModalOpen.value = true;
 };
 
 const closeModal = () => {
-    isModalOpen.value = false; // Close the modal
+    isModalOpen.value = false;
 };
 
 const addTask = () => {
     form.post(route("task.store"), {
         onSuccess: () => {
             form.reset();
-            closeModal(); // Close the modal after successful submission
+            closeModal();
         },
     });
 };
@@ -100,15 +98,17 @@ const deleteTask = (id) => {
 
 
 
-                 <!-- Task Section -->
+                <!-- Task Section -->
                 <div class="col-span-12 lg:col-span-8 bg-white p-6 shadow rounded">
 
-                    <h1 class="text-xl font-bold mb-4">Task List</h1>
+                    <div class="flex items-center justify-between mb-4">
+                        <h1 class="text-xl font-bold">Task List</h1>
 
-                    <!-- Button to open modal -->
-                    <button @click="openModal" class="px-4 py-2 bg-blue-500 text-white rounded">
-                        Add Task
-                    </button>
+                        <!-- Button to open modal -->
+                        <button @click="openModal" class="px-4 py-2 bg-blue-500 text-white rounded">
+                            Add Task
+                        </button>
+                    </div>
 
                     <ul class="space-y-2 mt-4">
                         <li v-for="task in tasks" :key="task.id"
@@ -129,66 +129,49 @@ const deleteTask = (id) => {
 
 
                     <!-- Modal for adding task -->
-                <div
-                    v-if="isModalOpen"
-                    class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50"
-                >
-                    <div class="bg-white p-6 rounded shadow-md w-96">
-                        <h2 class="text-xl font-bold mb-4">Add Task</h2>
+                    <div v-if="isModalOpen"
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50">
+                        <div class="bg-white p-6 rounded shadow-md w-96">
+                            <h2 class="text-xl font-bold mb-4">Add Task</h2>
 
-                        <!-- Task Form -->
-                        <form @submit.prevent="addTask">
-                            <div class="mb-4">
-                                <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-                                <input
-                                    v-model="form.title"
-                                    id="title"
-                                    type="text"
-                                    placeholder="Enter title"
-                                    class="w-full px-3 py-2 border rounded"
-                                    required
-                                />
-                            </div>
-                            <div class="mb-4">
-                                <label for="project_id" class="block text-sm font-medium text-gray-700">Project</label>
-                                <select
-                                    v-model="form.project_id"
-                                    id="project_id"
-                                    class="w-full px-3 py-2 border rounded"
-                                    required
-                                >
-                                    <option value="">Select a project</option>
-                                    <option v-for="project in projects" :key="project.id" :value="project.id">
-                                        {{ project.name }}
-                                    </option>
-                                </select>
-                            </div>
+                            <!-- Task Form -->
+                            <form @submit.prevent="addTask">
+                                <div class="mb-4">
+                                    <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                                    <input v-model="form.title" id="title" type="text" placeholder="Enter title"
+                                        class="w-full px-3 py-2 border rounded" required />
+                                </div>
+                                <div class="mb-4">
+                                    <label for="project_id"
+                                        class="block text-sm font-medium text-gray-700">Project</label>
+                                    <select v-model="form.project_id" id="project_id"
+                                        class="w-full px-3 py-2 border rounded" required>
+                                        <option value="">Select a project</option>
+                                        <option v-for="project in projects" :key="project.id" :value="project.id">
+                                            {{ project.name }}
+                                        </option>
+                                    </select>
+                                </div>
 
-                            <div class="flex justify-end mt-4">
-                                <button
-                                    type="submit"
-                                    class="px-4 py-2 bg-blue-500 text-white rounded"
-                                >
-                                    Save
-                                </button>
-                                <button
-                                    type="button"
-                                    @click="closeModal"
-                                    class="ml-2 px-4 py-2 bg-gray-300 text-gray-700 rounded"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
+                                <div class="flex justify-end mt-4">
+                                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">
+                                        Save
+                                    </button>
+                                    <button type="button" @click="closeModal"
+                                        class="ml-2 px-4 py-2 bg-gray-300 text-gray-700 rounded">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-                <!-- End Modal -->
+                    <!-- End Modal -->
 
 
                 </div>
 
 
-                
+
             </div>
         </div>
     </AuthenticatedLayout>

@@ -14,11 +14,11 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'truthfinder.mamun@gmail.com'],
+            ['email' => 'mamunandmoana@gmail.com'],
             [
                 'name' => 'Abdullah Al Mamun',
-                'email' => 'truthfinder.mamun@gmail.com',
-                'password' => Hash::make('12345678'), 
+                'email' => 'mamunandmoana@gmail.com',
+                'password' => Hash::make('12345678'),
                 'otp_verified' => true,
             ]
         );

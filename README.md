@@ -1,67 +1,248 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Laravel OTP and Taks Management System
 
-## About Laravel
+This project was an interview exam by Flick Media Ltd and I successfully completed the project with all requirements. The project is an OTP and Task Management System built using Laravel 12, Vue, Inertia.js, and TailwindCSS. The system allows users to authenticate using OTP and manage tasks efficiently through an interactive dashboard. 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Technologies
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Backend: Laravel 12.
+- Frontend: Vue.js, Inertia.js.
+- UI Framework: TailwindCSS.
+- Database: MySQL.
+- Authentication: Laravel Breeze (with OTP).
+- Task Management: Vue-based interactive dashboard.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Prerequisites
 
-## Learning Laravel
+- PHP 8.2+
+- Composer
+- Node.js & npm
+- MySQL
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Scaffolding
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+composer create-project laravel/laravel .
+composer require laravel/breeze --dev
+php artisan breeze:install vue
+npm install
+connect database to .env
+npm run dev
+php artisan serve
+php artisan migrate
+http://127.0.0.1:8000/
+```
+## SMTP
+Go to Google App Passwords, collect app password, and setup in .env file
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your_email@gmail.com
+MAIL_FROM_NAME="${APP_NAME}"
+```
+## OTP Code
+Generate 6-digit OTP code using app/helpers.php
 
-## Laravel Sponsors
+```bash
+if (!function_exists('generateOtp')) {
+    function generateOtp()
+    {
+        return rand(100000, 999999);
+    }
+}
+```
+Make sure helpers.php is included in composer.json file autoload section
+```bash
+"files": [
+            "app/helpers.php"
+        ]
+```
+```bash
+composer dump-autoload
+```
+```bash
+php artisan optimize:clear
+```
+## OTP Migration
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+php artisan make:migration add_otp_to_users_table
+```
+database/migrations/2025_03_01_133946_add_otp_to_users_table.php
+```bash
+$table->string('otp')->nullable();
+$table->timestamp('otp_expires_at')->nullable();
+$table->boolean('otp_verified')->default(false);
+```
+app/Models/User.php
+```bash
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable;
 
-### Premium Partners
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'otp',
+        'otp_expires_at',
+        'otp_verified',
+    ];
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-## Contributing
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'otp_expires_at' => 'datetime',
+        ];
+    }
+}
+```
+```bash
+php artisan migrate
+```
+## OTP Notification
+app/Notifications/OtpNotification.php
+```bash
+php artisan make:notification OtpNotification
+```
+## OTP Controller
+app/Http/Controllers/Auth/OtpController.php
+```bash
+php artisan make:controller Auth/OtpController
+```
+app/Http/Controllers/Auth/AuthenticatedSessionController.php
+```bash
+  public function store(LoginRequest $request): RedirectResponse
+    {
+        $request->authenticate();
+        $request->session()->regenerate();
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+        $user = Auth::user();
 
-## Code of Conduct
+        Auth::logout();
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+        // Generate OTP
+        $otp = generateOtp();
 
-## Security Vulnerabilities
+        // Manually set values and save
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addMinutes(5);
+        $user->otp_verified = false;
+        $user->save();
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+        // Send OTP via email
+        $user->notify(new OtpNotification($otp));
 
-## License
+        // Store email in session for verification
+        Session::put('otp_email', $user->email);
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# laravel_vue_inertia_tailwindcss
+        return redirect()->route('otp.verify');
+    }
+```
+app/Http/Controllers/Auth/RegisteredUserController.php
+```bash
+public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        event(new Registered($user));
+
+        Auth::login($user);
+
+        // Generate OTP
+        $otp = generateOtp();
+
+        // Manually set values and save
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addMinutes(5);
+        $user->otp_verified = false;
+        $user->save();
+
+        // Send OTP via email
+        $user->notify(new OtpNotification($otp));
+
+        // Store email in session for verification
+        Session::put('otp_email', $user->email);
+
+        // Logout user for otp confirmation
+        Auth::logout();
+
+        // Redirect to OTP verification page
+        return redirect()->route('otp.verify')->with('message', 'Please check your email to verify your account.');
+    }
+```
+
+## OTP Route
+routes/web.php
+```bash
+use App\Http\Controllers\Auth\OtpController;
+
+Route::get('/otp-verify', function () {
+    return Inertia::render('Auth/OtpVerify');
+})->name('otp.verify');
+
+Route::post('/otp-verify', [OtpController::class, 'verifyOtp']);
+```
+## OTP Vue Component
+resources/js/Pages/Auth/OtpVerify.vue
+
+## Project and Task Management
+```bash
+php artisan make:model Project -mcr
+```
+- app/Models/Project.php
+- database/migrations/2025_03_02_041240_create_projects_table.php
+- app/Http/Controllers/ProjectController.php
+
+```bash
+php artisan make:model Task -mcr
+```
+- app/Models/Task.php
+- database/migrations/2025_03_02_184316_create_tasks_table.php
+- app/Http/Controllers/TaskController.php
+
+## Screenshots
+login
+![Dashboard Screenshot](public/assets/images/screenshots/login.png)
+OTP sent to email
+![Dashboard Screenshot](public/assets/images/screenshots/otp-verify.png)
+Project and Task Management
+![Dashboard Screenshot](public/assets/images/screenshots/projects.png)
+
+## Github
+```bash
+If you download this project from Github
+
+composer install
+npm install
+connect database to .env
+connect smtp to .env
+php artisan key:generate
+php artisan storage:link
+php artisan migrate --seed
+npm run dev
+php artisan serve
+```
