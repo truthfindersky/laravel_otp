@@ -51,17 +51,17 @@ Generate 6-digit OTP code using app/helpers.php
 
 ```bash
 if (!function_exists('generateOtp')) {
-    function generateOtp()
-    {
-        return rand(100000, 999999);
-    }
+    function generateOtp()
+    {
+        return rand(100000, 999999);
+    }
 }
 ```
 Make sure helpers.php is included in composer.json file autoload section
 ```bash
 "files": [
-            "app/helpers.php"
-        ]
+            "app/helpers.php"
+        ]
 ```
 ```bash
 composer dump-autoload
@@ -84,30 +84,30 @@ app/Models/User.php
 ```bash
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'otp',
-        'otp_expires_at',
-        'otp_verified',
-    ];
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'otp',
+        'otp_expires_at',
+        'otp_verified',
+    ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'otp_expires_at' => 'datetime',
-        ];
-    }
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'otp_expires_at' => 'datetime',
+        ];
+    }
 }
 ```
 ```bash
@@ -125,74 +125,74 @@ php artisan make:controller Auth/OtpController
 ```
 app/Http/Controllers/Auth/AuthenticatedSessionController.php
 ```bash
-  public function store(LoginRequest $request): RedirectResponse
-    {
-        $request->authenticate();
-        $request->session()->regenerate();
+  public function store(LoginRequest $request): RedirectResponse
+    {
+        $request->authenticate();
+        $request->session()->regenerate();
 
-        $user = Auth::user();
+        $user = Auth::user();
 
-        Auth::logout();
+        Auth::logout();
 
-        // Generate OTP
-        $otp = generateOtp();
+        // Generate OTP
+        $otp = generateOtp();
 
-        // Manually set values and save
-        $user->otp = $otp;
-        $user->otp_expires_at = Carbon::now()->addMinutes(5);
-        $user->otp_verified = false;
-        $user->save();
+        // Manually set values and save
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addMinutes(5);
+        $user->otp_verified = false;
+        $user->save();
 
-        // Send OTP via email
-        $user->notify(new OtpNotification($otp));
+        // Send OTP via email
+        $user->notify(new OtpNotification($otp));
 
-        // Store email in session for verification
-        Session::put('otp_email', $user->email);
+        // Store email in session for verification
+        Session::put('otp_email', $user->email);
 
-        return redirect()->route('otp.verify');
-    }
+        return redirect()->route('otp.verify');
+    }
 ```
 app/Http/Controllers/Auth/RegisteredUserController.php
 ```bash
 public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
 
-        event(new Registered($user));
+        event(new Registered($user));
 
-        Auth::login($user);
+        Auth::login($user);
 
-        // Generate OTP
-        $otp = generateOtp();
+        // Generate OTP
+        $otp = generateOtp();
 
-        // Manually set values and save
-        $user->otp = $otp;
-        $user->otp_expires_at = Carbon::now()->addMinutes(5);
-        $user->otp_verified = false;
-        $user->save();
+        // Manually set values and save
+        $user->otp = $otp;
+        $user->otp_expires_at = Carbon::now()->addMinutes(5);
+        $user->otp_verified = false;
+        $user->save();
 
-        // Send OTP via email
-        $user->notify(new OtpNotification($otp));
+        // Send OTP via email
+        $user->notify(new OtpNotification($otp));
 
-        // Store email in session for verification
-        Session::put('otp_email', $user->email);
+        // Store email in session for verification
+        Session::put('otp_email', $user->email);
 
-        // Logout user for otp confirmation
-        Auth::logout();
+        // Logout user for otp confirmation
+        Auth::logout();
 
-        // Redirect to OTP verification page
-        return redirect()->route('otp.verify')->with('message', 'Please check your email to verify your account.');
-    }
+        // Redirect to OTP verification page
+        return redirect()->route('otp.verify')->with('message', 'Please check your email to verify your account.');
+    }
 ```
 
 ## OTP Route
@@ -201,7 +201,7 @@ routes/web.php
 use App\Http\Controllers\Auth\OtpController;
 
 Route::get('/otp-verify', function () {
-    return Inertia::render('Auth/OtpVerify');
+    return Inertia::render('Auth/OtpVerify');
 })->name('otp.verify');
 
 Route::post('/otp-verify', [OtpController::class, 'verifyOtp']);
